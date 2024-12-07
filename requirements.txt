@@ -6,3 +6,4 @@ types-protobuf==5.29.1.20241207
 typing_extensions==4.12.2
 openai
 lmnt
+streamlit
