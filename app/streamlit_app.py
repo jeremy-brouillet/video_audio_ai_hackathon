@@ -1,31 +1,32 @@
 import streamlit as st
-from PyPDF2 import PdfReader
-import io
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
+# from PyPDF2 import PdfReader
+# import io
+# import asyncio
+# from lmnt_streaming_test import generate_audio_response, VOICE_CONFIGS
+# import os
+# import openai
 
 st.title("Multi-Agent Resume Analyzer")
 
+# Initialize OpenAI client
+# client = openai.OpenAI()
+
 # File uploader for PDF
-uploaded_file = st.file_uploader("Upload your resume (PDF)", type="pdf")
+uploaded_file = st.file_uploader("Upload your resume (TXT)", type="txt")
 
 if uploaded_file is not None:
-    # Read PDF content
-    pdf_reader = PdfReader(io.BytesIO(uploaded_file.read()))
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-
-    # Initialize ChatGPT
-    chat = ChatOpenAI(temperature=0.7)
+    # Read text file content
+    text = uploaded_file.getvalue().decode("utf-8")
 
     # Define different agent personalities
     agents = {
-        "Professional Recruiter": "You are a professional recruiter. Analyze the resume in a formal, structured way highlighting key qualifications and experience.",
-        "Career Coach": "You are an enthusiastic career coach. Provide constructive feedback and suggestions for improvement in an encouraging tone.",
+        "Jargon": "You are a professional recruiter. Analyze the resume in a formal, structured way highlighting key qualifications and experience.",
+        "Nervous": "You are a nervous person. Analyze the resume in a casual, unstructured way highlighting key qualifications and experience.",
+        "Casual": "You are a casual person. Analyze the resume in a casual, unstructured way highlighting key qualifications and experience.",
         "Industry Expert": "You are a seasoned industry expert. Evaluate the resume from a technical perspective and discuss relevant industry trends.",
-        "Creative Director": "You are a creative director. Focus on the unique aspects and creative elements of the candidate's experience.",
     }
+    
+    st.write(text)
 
     # Create columns for better layout
     cols = st.columns(len(agents))
@@ -44,13 +45,15 @@ if uploaded_file is not None:
             
             if st.button("🎬 Play", key=button_key):
                 st.session_state.active_agent = agent_name
-
-            # Display response if this agent is active
-            if st.session_state.active_agent == agent_name:
-                with st.spinner(f"{agent_name} is analyzing..."):
-                    messages = [
-                        SystemMessage(content=prompt),
-                        HumanMessage(content=f"Please analyze this resume:\n\n{text}")
-                    ]
-                    response = chat.invoke(messages)
-                    st.write(response.content)
+                
+                # Load the pre-generated audio file
+                audio_path = '../output/output-jargon-ava.mp3'
+                
+                try:
+                    # Play the audio
+                    audio_file = open(audio_path, 'rb')
+                    audio_bytes = audio_file.read()
+                    st.audio(audio_bytes, format='audio/mp3')
+                    audio_file.close()
+                except FileNotFoundError:
+                    st.error(f"Audio file not found for {agent_name}")
