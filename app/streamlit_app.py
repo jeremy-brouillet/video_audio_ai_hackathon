@@ -1,10 +1,13 @@
 import streamlit as st
-# from PyPDF2 import PdfReader
-# import io
-# import asyncio
-# from lmnt_streaming_test import generate_audio_response, VOICE_CONFIGS
-# import os
-# import openai
+import base64
+
+st.markdown("""
+<style>
+.stButton button {
+    width: 100%;
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.title("Multi-Agent Resume Analyzer")
 
@@ -26,34 +29,47 @@ if uploaded_file is not None:
         "Industry Expert": "You are a seasoned industry expert. Evaluate the resume from a technical perspective and discuss relevant industry trends.",
     }
     
-    st.write(text)
+    # st.write(text)
 
     # Create columns for better layout
     cols = st.columns(len(agents))
 
-    # Track which agent is currently active
+    # Track which agent is currently active and playing
     if 'active_agent' not in st.session_state:
         st.session_state.active_agent = None
+        st.session_state.is_playing = False
 
     # Create widgets for each agent
     for idx, (agent_name, prompt) in enumerate(agents.items()):
         with cols[idx]:
             st.subheader(agent_name)
             
-            # Create unique key for each button
-            button_key = f"button_{agent_name}"
-            
-            if st.button("🎬 Play", key=button_key):
-                st.session_state.active_agent = agent_name
-                
-                # Load the pre-generated audio file
-                audio_path = '../output/output-jargon-ava.mp3'
-                
-                try:
-                    # Play the audio
-                    audio_file = open(audio_path, 'rb')
-                    audio_bytes = audio_file.read()
-                    st.audio(audio_bytes, format='audio/mp3')
-                    audio_file.close()
-                except FileNotFoundError:
-                    st.error(f"Audio file not found for {agent_name}")
+            if st.button("🎬 Play", key=f"button_{agent_name}"):
+                # If clicking the same button that's currently playing, stop the audio
+                if st.session_state.active_agent == agent_name and st.session_state.is_playing:
+                    st.session_state.active_agent = None
+                    st.session_state.is_playing = False
+                    # Insert empty audio to stop current playback
+                    st.components.v1.html(
+                        """
+                        <audio id="audio" style="display: none">
+                            <source src="" type="audio/mp3">
+                        </audio>
+                        """,
+                        height=0
+                    )
+                else:
+                    # Play new audio
+                    st.session_state.active_agent = agent_name
+                    st.session_state.is_playing = True
+                    
+                    audio_path = "../output/output-jargon-sam-altman.mp3"
+                    try:
+                        audio_html = f"""
+                            <audio autoplay style="display: none">
+                                <source src="data:audio/mp3;base64,{base64.b64encode(open(audio_path, 'rb').read()).decode()}" type="audio/mp3">
+                            </audio>
+                        """
+                        st.components.v1.html(audio_html, height=0)
+                    except FileNotFoundError:
+                        st.error(f"Audio file not found for {agent_name}")
