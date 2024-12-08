@@ -2,8 +2,8 @@ import asyncio
 from lmnt.api import Speech
 from openai import AsyncOpenAI
 import os
+import re
 
-RESUME = open('resume/sam_altman.txt').read()
 
 # VOICE_ID = '26b0c713-0d5b-476f-af0a-1eeb3278b362'  # Sam Altman
 # VOICE_ID = 'b8fb49dc-623d-427a-a6db-8840babccca7'  # Sam Altman
@@ -36,7 +36,6 @@ async def reader_task(connection, output_file_path):
   with open(output_file_path, 'wb') as f:
     async for message in connection:
       f.write(message['audio'])
-    #   print('wrote audio', end='', flush=True)
 
 
 async def writer_task(connection, system_prompt, resume):
@@ -46,7 +45,7 @@ async def writer_task(connection, system_prompt, resume):
         api_key=os.environ['OPENAI_API_KEY'],
     )
     response = await client.chat.completions.create(
-        model='openai/gpt-3.5-turbo',
+        model='meta-llama/llama-3.2-3b-instruct:free', # 'openai/gpt-3.5-turbo',
         messages=[
             {'role': 'system', 'content': system_prompt},
             {'role': 'user', 'content': resume}
@@ -59,8 +58,10 @@ async def writer_task(connection, system_prompt, resume):
             not chunk.choices[0].delta.content):
           continue
         content = chunk.choices[0].delta.content
-        await connection.append_text(content)
         output_text += content
+
+    output_text = clean_text(output_text)
+    await connection.append_text(output_text)
 
     print(output_text)
 
@@ -69,20 +70,39 @@ async def writer_task(connection, system_prompt, resume):
     await connection.finish()
 
 
+def clean_text(input_text):
+    """
+    Removes occurrences of *excitedly*, *stutter*, and similar terms in the text.
+
+    Args:
+        input_text (str): The input text containing terms to be removed.
+
+    Returns:
+        str: The cleaned text.
+    """
+    # Regex to match terms enclosed in asterisks, such as *excitedly* or *stutter*
+    cleaned_text = re.sub(r"\*\w+\*", "", input_text)
+
+    # Remove any redundant spaces introduced during the removal
+    cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
+
+    return cleaned_text
+
+
 input_tuples = [
     # prompt, resume, output_file_path, voice_id
     (
         open('system_prompts/nervous_2_style.txt').read(),
-        RESUME,
+        open('resume/sam_altman.txt').read(),
         'output/4-12-pm-output-nervous.mp3',
         '26b0c713-0d5b-476f-af0a-1eeb3278b362' # Sam Altman Voice Clone
     ),
     (
         open('system_prompts/jargon_style.txt').read(),
-        RESUME,
+        open('resume/sam_altman.txt').read(),
         'output/4-12-pm-output-jargon.mp3',
         'ava'
     ),
 ]
 
-asyncio.run(main(input_tuples))
+# asyncio.run(main(input_tuples))
