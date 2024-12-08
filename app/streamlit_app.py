@@ -1,5 +1,7 @@
-import streamlit as st
 import base64
+
+import streamlit as st
+
 
 st.markdown("""
 <style>
@@ -28,7 +30,7 @@ if uploaded_file is not None:
         "Casual": "You are a casual person. Analyze the resume in a casual, unstructured way highlighting key qualifications and experience.",
         "Industry Expert": "You are a seasoned industry expert. Evaluate the resume from a technical perspective and discuss relevant industry trends.",
     }
-    
+
     # st.write(text)
 
     # Create columns for better layout
@@ -43,7 +45,7 @@ if uploaded_file is not None:
     for idx, (agent_name, prompt) in enumerate(agents.items()):
         with cols[idx]:
             st.subheader(agent_name)
-            
+
             if st.button("🎬 Play", key=f"button_{agent_name}"):
                 # If clicking the same button that's currently playing, stop the audio
                 if st.session_state.active_agent == agent_name and st.session_state.is_playing:
@@ -62,7 +64,6 @@ if uploaded_file is not None:
                     # Play new audio
                     st.session_state.active_agent = agent_name
                     st.session_state.is_playing = True
-                    
                     audio_path = "../output/output-jargon-sam-altman.mp3"
                     try:
                         audio_html = f"""
